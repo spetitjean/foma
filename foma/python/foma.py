@@ -310,13 +310,13 @@ class FST(object):
                 output = applyf(c_void_p(applyerhandle))
                     
     def words(self, tokenize = False):
-        return self._apply(foma_apply_words, word = None)
+        return self._apply(foma_apply_words, word = None, tokenize = tokenize)
 
     def lowerwords(self, tokenize = False):
-        return self._apply(foma_apply_lower_words, word = None)
+        return self._apply(foma_apply_lower_words, word = None, tokenize = tokenize)
                     
     def upperwords(self, tokenize = False):
-        return self._apply(foma_apply_upper_words, word = None)
+        return self._apply(foma_apply_upper_words, word = None, tokenize = tokenize)
         
     def apply_down(self, word, tokenize = False):
         return self._apply(foma_apply_down, word = word, tokenize = tokenize)
@@ -460,7 +460,7 @@ class MTFSM(FST):
         result = MTFSM(res, m + n - 1)
         return result
 
-    def _apply(self, applyf, word = None):
+    def _apply(self, applyf, word = None, tokenize=False):
         if not self.fsthandle:
             raise ValueError('FST not defined')
         applyerhandle = foma_apply_init(self.fsthandle)
