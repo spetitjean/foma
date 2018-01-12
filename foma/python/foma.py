@@ -53,6 +53,8 @@ foma_fsm_union = foma.fsm_union
 foma_fsm_union.restype = POINTER(FSTstruct)
 foma_fsm_intersect = foma.fsm_intersect
 foma_fsm_intersect.restype = POINTER(FSTstruct)
+foma_fsm_substitute_symbol = foma.fsm_substitute_symbol
+foma_fsm_substitute_symbol.restype = POINTER(FSTstruct)
 foma_fsm_minus = foma.fsm_minus
 foma_fsm_minus.restype = POINTER(FSTstruct)
 foma_fsm_compose = foma.fsm_compose
@@ -167,10 +169,10 @@ class FST(object):
     @staticmethod
     def encode(string):
         """Makes sure str and unicode are converted."""
-        if isinstance(string, unicode):
+        # if isinstance(string, unicode):
+        #     return string.encode('utf8')
+        if isinstance(string, str):
             return string.encode('utf8')
-        elif isinstance(string, str):
-            return string
         else:
             return str(string)
             
@@ -308,13 +310,13 @@ class FST(object):
                 output = applyf(c_void_p(applyerhandle))
                     
     def words(self, tokenize = False):
-        return self._apply(foma_apply_words, word = None, tokenize = tokenize)
+        return self._apply(foma_apply_words, word = None)
 
     def lowerwords(self, tokenize = False):
-        return self._apply(foma_apply_lower_words, word = None, tokenize = tokenize)
+        return self._apply(foma_apply_lower_words, word = None)
                     
     def upperwords(self, tokenize = False):
-        return self._apply(foma_apply_upper_words, word = None, tokenize = tokenize)
+        return self._apply(foma_apply_upper_words, word = None)
         
     def apply_down(self, word, tokenize = False):
         return self._apply(foma_apply_down, word = word, tokenize = tokenize)
@@ -342,6 +344,15 @@ class FST(object):
             return handle
         else:
             raise ValueError('Undefined FST')
+
+    def _fomacallternary(self, first, second, func, minimize = True):
+        if self.fsthandle:
+            handle = func(foma_fsm_copy(self.fsthandle), first, second)
+            if minimize:
+                handle = foma_fsm_minimize(handle)
+            return handle
+        else:
+            raise ValueError('Undefined FST')
         
     def union(self, other, minimize = True):
         new = FST()
@@ -353,6 +364,11 @@ class FST(object):
         new.fsthandle = self._fomacallbinary(other, foma_fsm_intersect, minimize)
         return new
 
+    def substitute(self, first, second, minimize = True):
+        new = FST()
+        new.fsthandle = self._fomacallternary(first, second, foma_fsm_substitute_symbol, minimize)
+        return new
+    
     def minus(self, other, minimize = True):
         new = FST()
         new.fsthandle = self._fomacallbinary(other, foma_fsm_minus, minimize)
@@ -387,7 +403,8 @@ class FST(object):
 class MTFSM(FST):
 
     def __init__(self, regex = False, numtapes = 2):
-        if isinstance(regex, str) or isinstance(regex, unicode):
+        #if isinstance(regex, str) or isinstance(regex, unicode):
+        if isinstance(regex, str):
             FST.__init__(self, regex)
             eps_sym = FST('□')
             self.fsthandle = foma_fsm_flatten(foma_fsm_copy(self.fsthandle), foma_fsm_copy(eps_sym.fsthandle))
