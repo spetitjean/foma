@@ -122,7 +122,7 @@ class FST(object):
         name = cls.encode(name)
         if isinstance(definition, FST):
             retval = foma.add_defined(c_void_p(cls.networkdefinitions.defhandle), foma_fsm_copy(definition.fsthandle), c_char_p(name))
-        elif isinstance(definition, basestring):
+        elif isinstance(definition, str):
             regex = cls.encode(definition)
             retval = foma.add_defined(c_void_p(cls.networkdefinitions.defhandle), foma_fsm_parse_regex(c_char_p(regex), c_void_p(cls.networkdefinitions.defhandle), c_void_p(cls.functiondefinitions.deffhandle)), c_char_p(name))
         else:
@@ -134,9 +134,9 @@ class FST(object):
         # Prototype is a 2-tuple (name, (arg1name, ..., argname))
         # Definition is regex using prototype variables
         name = cls.encode(prototype[0] + '(')
-        if isinstance(definition, basestring):
+        if isinstance(definition, str):
             numargs = len(prototype[1])
-            for i in xrange(numargs):
+            for i in range(numargs):
                 definition = definition.replace(prototype[1][i], "@ARGUMENT0%i@" % (i+1))
             regex = cls.encode(definition + ';')
             retval = foma.add_defined_function(c_void_p(cls.functiondefinitions.deffhandle), c_char_p(name), c_char_p(regex), c_int(numargs))

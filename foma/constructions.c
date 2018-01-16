@@ -1720,7 +1720,7 @@ struct fsm *fsm_substitute_label(struct fsm *net, char *original, struct fsm *su
 }
 
 struct fsm *fsm_substitute_symbol(struct fsm *net, char *original, char *substitute) {
-    struct fsm_state *fsm;
+    struct fsm_state *fsm;    
     int i,o,s = EPSILON;
     if (strcmp(original,substitute) == 0)
         return(net);
@@ -1735,10 +1735,49 @@ struct fsm *fsm_substitute_symbol(struct fsm *net, char *original, char *substit
     }
     for (i=0, fsm = net->states; (fsm+i)->state_no != -1; i++) {
 	if ((fsm+i)->in == o) {
-	    (fsm+i)->in = s;
+	  (fsm+i)->in = s;
         }
 	if ((fsm+i)->out == o) {
-	    (fsm+i)->out = s;
+	  (fsm+i)->out = s;
+        }
+    }
+    net->sigma = sigma_remove(original, net->sigma);
+    sigma_sort(net);
+    fsm_update_flags(net, NO, NO, NO, NO, NO, NO);
+    sigma_cleanup(net,0);
+    /* if s = epsilon */
+    net->is_minimized = NO;
+    return(fsm_determinize(net));
+}
+
+struct fsm *fsm_substitute_symbols(struct fsm *net, char *original, char **substitute) {
+    struct fsm_state *fsm;
+    int i,o = EPSILON;
+    int size = sizeof(substitute)/sizeof(substitute[0]);
+    int s[size];
+    //if (strcmp(original,substitute) == 0)
+    //    return(net);
+    if ((o = sigma_find(original, net->sigma)) == -1) {
+	//fprintf(stderr, "\nSymbol '%s' not found in network!\n", original);
+	return(net);
+    }
+    for(int i=0; i<size; i++){
+      if (strcmp(substitute[i],"0") == 0)
+        s[i] = EPSILON;
+      else if (substitute[i] != NULL && (s[i] = sigma_find(substitute[i], net->sigma)) == -1) {
+        s[i] = sigma_add(substitute[i], net->sigma);
+      }
+    }
+    for (i=0, fsm = net->states; (fsm+i)->state_no != -1; i++) {
+	if ((fsm+i)->in == o) {
+	  for(int i=0; i<size; i++){
+	    (fsm+i)->in = s[i];
+	  }
+        }
+	if ((fsm+i)->out == o) {
+	  for(int i=0; i<size; i++){
+	    (fsm+i)->out = s[i];
+	  }
         }
     }
     net->sigma = sigma_remove(original, net->sigma);
